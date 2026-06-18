@@ -70,7 +70,10 @@ function parseGithubContributions(raw: unknown): GithubContributionsResponse {
     username,
     contributions: Number(payload.totalContributions || payload.contributions || 0),
     connected: (payload.status === 'success' || Boolean(payload.fallback) || Boolean(payload.isConnected)) && Boolean(username),
-    days
+    days,
+    source: String(payload.source || (payload.fallback ? 'cache' : 'live')),
+    fetchedAt: String(payload.fetchedAt || ''),
+    fallback: Boolean(payload.fallback)
   };
 }
 
@@ -269,6 +272,9 @@ export interface GithubContributionsResponse {
   contributions: number;
   connected: boolean;
   days: GithubContributionDay[];
+  source: string;
+  fetchedAt: string;
+  fallback: boolean;
 }
 
 export const authStorage = {

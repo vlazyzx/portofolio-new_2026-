@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, jsonify
 from pymongo import ReturnDocument
 from pymongo.errors import PyMongoError
@@ -8,6 +10,7 @@ from services.db import get_collection, mongo_error_response, now_iso, serialize
 
 
 github_bp = Blueprint("github", __name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def _settings():
@@ -16,6 +19,8 @@ def _settings():
 
 def _save_github_status(value: dict) -> dict:
     timestamp = now_iso()
+    value["fetchedAt"] = value.get("fetchedAt") or timestamp
+    value["source"] = value.get("source") or "live"
     return _settings().find_one_and_update(
         {"key": "github"},
         {
@@ -75,9 +80,18 @@ def get_github_contributions():
                 "syncWebhook": True,
                 "totalContributions": data["totalContributions"],
                 "days": data["days"],
+                "fetchedAt": data.get("fetchedAt"),
+                "source": data.get("source", "live"),
             }
         )
-        return jsonify({"status": "success", **data, "meta": serialize_document(setting)})
+        LOGGER.info(
+            "GitHub contributions live saved username=%s total=%s days=%s fetchedAt=%s",
+            data["user"]["login"],
+            data["totalContributions"],
+            len(data["days"]),
+            data.get("fetchedAt"),
+        )
+        return jsonify({"status": "success", **data, "isConnected": True, "meta": serialize_document(setting)})
     except PyMongoError as error:
         body, status = mongo_error_response(error)
         return jsonify(body), status
@@ -90,8 +104,25 @@ def get_github_contributions():
         cached_avatar = cached_value.get("avatarUrl")
         cached_total = int(cached_value.get("totalContributions") or 0)
         cached_connected = bool(cached_value.get("isConnected")) or bool(cached_login)
+        cached_fetched_at = cached_value.get("fetchedAt")
+        cached_source = cached_value.get("source") or "cache"
+
+        if cached_connected and not cached_fetched_at and cached:
+            cached_fetched_at = now_iso()
+            _settings().update_one(
+                {"key": "github"},
+                {"$set": {"value.fetchedAt": cached_fetched_at, "updatedAt": cached_fetched_at}},
+            )
 
         if cached_connected:
+            LOGGER.warning(
+                "GitHub contributions fallback cache used username=%s total=%s days=%s fetchedAt=%s error=%s",
+                cached_login,
+                cached_total,
+                len(cached_days),
+                cached_fetched_at,
+                error,
+            )
             return jsonify(
                 {
                     "status": "success",
@@ -104,12 +135,15 @@ def get_github_contributions():
                     "totalContributions": cached_total,
                     "days": cached_days,
                     "isConnected": True,
+                    "fetchedAt": cached_fetched_at,
+                    "source": cached_source,
                     "meta": serialize_document(cached) if cached else None,
                     "fallback": True,
                     "detail": str(error),
                 }
             )
 
+        LOGGER.error("GitHub contributions live fetch failed without usable cache error=%s", error)
         return (
             jsonify(
                 {

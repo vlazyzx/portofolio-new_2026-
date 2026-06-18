@@ -229,7 +229,13 @@ export default function About({ onNavigate: _onNavigate, refreshToken = 0 }: Abo
             <div className="sb2 github-card edge-panel about-side-card">
               <div className="card-headline">
                 <div className="ey card-ey">Kontribusi GitHub</div>
-                <span className="card-mini-note">Aktivitas repo dari akun yang terhubung</span>
+                <span className="card-mini-note">
+                  {githubData?.connected
+                    ? githubData.fallback
+                      ? `Menampilkan cache terakhir${githubData.fetchedAt ? ` · ${new Date(githubData.fetchedAt).toLocaleString('id-ID')}` : ''}`
+                      : `Live dari backend${githubData.fetchedAt ? ` · ${new Date(githubData.fetchedAt).toLocaleString('id-ID')}` : ''}`
+                    : 'Aktivitas repo dari akun yang terhubung'}
+                </span>
               </div>
               {githubData?.connected && githubData.days.length > 0 ? (
                 <ContributionGraph
