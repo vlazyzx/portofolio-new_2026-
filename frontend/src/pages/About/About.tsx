@@ -58,8 +58,8 @@ export default function About({ onNavigate: _onNavigate, refreshToken = 0 }: Abo
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadAboutPage = () => {
-      setLoading(true);
+    const loadAboutPage = (showLoader = true) => {
+      if (showLoader) setLoading(true);
       Promise.allSettled([api.getProfile(), api.getAbout(), api.getGithubContributions()])
         .then(([profileResult, aboutResult, githubResult]) => {
           setProfile(profileResult.status === 'fulfilled' ? profileResult.value : null);
@@ -69,10 +69,23 @@ export default function About({ onNavigate: _onNavigate, refreshToken = 0 }: Abo
         .finally(() => setLoading(false));
     };
 
-    loadAboutPage();
-    window.addEventListener('about-content-updated', loadAboutPage);
+    const handleFocusRefresh = () => loadAboutPage(false);
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === 'visible') loadAboutPage(false);
+    };
+    const refreshInterval = window.setInterval(() => loadAboutPage(false), 60000);
 
-    return () => window.removeEventListener('about-content-updated', loadAboutPage);
+    loadAboutPage();
+    window.addEventListener('about-content-updated', handleFocusRefresh);
+    window.addEventListener('focus', handleFocusRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityRefresh);
+
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('about-content-updated', handleFocusRefresh);
+      window.removeEventListener('focus', handleFocusRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh);
+    };
   }, [refreshToken]);
 
   const stackLogos = toTextLogos(about?.stack ?? []);

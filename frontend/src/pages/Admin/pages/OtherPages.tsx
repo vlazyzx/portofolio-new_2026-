@@ -794,17 +794,36 @@ export function GithubPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getGithubContributions()
-      .then(result => {
-        setData(result);
-        setError('');
-      })
-      .catch(err => {
-        const message = errorMessage(err, 'Gagal memuat data GitHub.');
-        setError(message);
-        toast(message, 'error');
-      })
-      .finally(() => setLoading(false));
+    const loadGithub = (showLoader = true, silent = false) => {
+      if (showLoader) setLoading(true);
+      getGithubContributions()
+        .then(result => {
+          setData(result);
+          setError('');
+        })
+        .catch(err => {
+          const message = errorMessage(err, 'Gagal memuat data GitHub.');
+          setError(message);
+          if (!silent) toast(message, 'error');
+        })
+        .finally(() => setLoading(false));
+    };
+
+    const handleRefresh = () => loadGithub(false, true);
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === 'visible') loadGithub(false, true);
+    };
+    const refreshInterval = window.setInterval(() => loadGithub(false, true), 60000);
+
+    loadGithub();
+    window.addEventListener('focus', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityRefresh);
+
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh);
+    };
   }, [toast]);
 
   if (loading) return <LoadingState />;
