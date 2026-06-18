@@ -1,0 +1,243 @@
+﻿:root {
+  --font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Syne', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Space Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 450;
+  line-height: 1.6;
+  letter-spacing: 0;
+  font-synthesis: none;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+.stt,
+.h-name,
+.nc-title,
+.pj-title,
+.project-modal-copy h2,
+.project-shot-screen strong,
+.project-empty h2,
+.student-main h2,
+.gpa-card div,
+.sn,
+.more-plus,
+.project-shot-mark,
+.project-empty-mark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.stt {
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.h-name {
+  line-height: .95;
+  text-wrap: balance;
+}
+
+.h-desc,
+.bio p,
+.contact-copy,
+.student-copy,
+.pj-desc,
+.project-modal-copy p,
+.project-shot-screen p,
+.project-empty p,
+.pj-more p,
+.nc-desc,
+.social-card small,
+.as,
+.tl-o,
+.campus {
+  font-family: var(--font-body);
+  font-weight: 450;
+  line-height: 1.72;
+  letter-spacing: 0;
+}
+
+.b-name,
+.tl-r,
+.at,
+.social-card strong,
+.cr span:first-child,
+.project-highlight,
+.about-logo-title,
+.sk-nm,
+.fl,
+.channel-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.ey,
+.tag,
+.stag,
+.mono,
+.pf,
+.nl,
+.mnl,
+.nbtn,
+.mnbtn,
+.sk-pct,
+.tl-yr,
+.student-year,
+.social-arrow,
+.project-modal-ey,
+.project-shot-count,
+.project-empty-ey,
+.contribution-summary,
+.contribution-legend,
+.contribution-months span,
+.contribution-days span {
+  font-family: var(--font-mono);
+}
+
+.ey {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.tag,
+.stag,
+.mono {
+  font-size: 10px;
+  letter-spacing: .06em;
+}
+
+.bp,
+.bg,
+.pl,
+.pf,
+.nbtn,
+.mnbtn,
+.project-shot-button {
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.nl,
+.mnl {
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+.fi {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.fi::placeholder {
+  color: color-mix(in srgb, var(--su) 72%, transparent);
+}
+
+@media (max-width: 760px) {
+  body {
+    font-size: 13px;
+  }
+
+  .stt {
+    line-height: 1.05;
+  }
+
+  .h-desc,
+  .bio p,
+  .contact-copy,
+  .student-copy,
+  .pj-desc,
+  .project-modal-copy p,
+  .project-empty p,
+  .nc-desc {
+    line-height: 1.62;
+  }
+
+  .ey {
+    font-size: 9.5px;
+    letter-spacing: .1em;
+  }
+
+  .tag,
+  .stag,
+  .mono {
+    font-size: 9.5px;
+    letter-spacing: .05em;
+  }
+}
+/* All-page section breathing room for iOS / Android / iPad */
+.wrap.sec {
+  padding-left: max(var(--px), env(safe-area-inset-left));
+  padding-right: max(var(--px), env(safe-area-inset-right));
+}
+
+.wrap.sec > .ey,
+.wrap.sec > .stt,
+.wrap.sec > .contact-copy,
+.wrap.sec > .project-filter {
+  max-width: min(100%, 920px);
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  .wrap.sec {
+    padding-left: max(clamp(30px, 6vw, 54px), env(safe-area-inset-left));
+    padding-right: max(clamp(30px, 6vw, 54px), env(safe-area-inset-right));
+  }
+
+  .wrap.sec > .stt {
+    max-width: 820px;
+  }
+}
+
+@media (max-width: 760px) {
+  .wrap.sec {
+    padding-left: max(clamp(22px, 6vw, 34px), env(safe-area-inset-left));
+    padding-right: max(clamp(22px, 6vw, 34px), env(safe-area-inset-right));
+  }
+
+  .wrap.sec > .ey,
+  .wrap.sec > .stt {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .wrap.sec > .stt {
+    max-width: 100%;
+    font-size: clamp(28px, 8.2vw, 40px);
+    line-height: 1.05;
+  }
+}
+
+@media (max-width: 430px) {
+  .wrap.sec {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+
+  .wrap.sec > .stt {
+    font-size: clamp(27px, 8.7vw, 37px);
+  }
+}

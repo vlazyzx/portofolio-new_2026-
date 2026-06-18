@@ -1,0 +1,155 @@
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(36px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes riseUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan {
+  from { left: -100%; }
+  to { left: 100%; }
+}
+
+@keyframes borderSweep {
+  0%, 100% { opacity: .38; transform: translateY(-8px); }
+  50% { opacity: 1; transform: translateY(8px); }
+}
+
+@keyframes softPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 43, .14); }
+  50% { box-shadow: 0 0 0 7px rgba(255, 107, 43, 0); }
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* React Bits inspired motion layer */
+.rb-reveal {
+  opacity: 0;
+  filter: blur(12px);
+  transform: translateY(22px) scale(.985);
+  transition:
+    opacity .72s cubic-bezier(.22, 1, .36, 1),
+    filter .72s cubic-bezier(.22, 1, .36, 1),
+    transform .72s cubic-bezier(.22, 1, .36, 1),
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background .2s ease;
+  transition-delay: var(--rb-delay, 0ms);
+}
+
+.rb-reveal.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0) scale(1);
+}
+
+@keyframes rbGlowSweep {
+  0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+  40% { opacity: .9; }
+  100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+}
+
+@keyframes rbEdgePulse {
+  0%, 100% { opacity: .32; }
+  50% { opacity: .92; }
+}
+
+@keyframes rbFloatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.nc,
+.pj,
+.sb2,
+.student-profile,
+.student-column,
+.social-panel,
+.fb,
+.bio {
+  position: relative;
+  overflow: hidden;
+}
+
+.nc::after,
+.pj::after,
+.sb2::after,
+.student-profile::after,
+.student-column::after,
+.social-panel::after,
+.fb::after,
+.bio::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -42%;
+  width: 28%;
+  background: linear-gradient(90deg, transparent, rgba(255, 107, 43, .1), transparent);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.nc:hover::after,
+.pj:hover::after,
+.sb2:hover::after,
+.student-profile:hover::after,
+.student-column:hover::after,
+.social-panel:hover::after,
+.fb:hover::after,
+.bio:hover::after {
+  animation: rbGlowSweep 1.15s ease;
+}
+
+.edge-panel::before,
+.edge-panel::after {
+  animation: rbEdgePulse 3.8s ease-in-out infinite;
+}
+
+.social-icon:nth-child(odd),
+.stack-item:nth-child(odd),
+.tool-item:nth-child(odd) {
+  animation: rbFloatSoft 4.8s ease-in-out infinite;
+}
+
+.social-icon:nth-child(even),
+.stack-item:nth-child(even),
+.tool-item:nth-child(even) {
+  animation: rbFloatSoft 5.4s .4s ease-in-out infinite;
+}
+
+@media (hover: hover) {
+  .nc:hover,
+  .pj:hover,
+  .sb2:hover,
+  .ach:hover,
+  .cr:hover,
+  .ch:hover,
+  .social-card:hover {
+    transform: translateY(-4px) scale(1.01);
+  }
+}
