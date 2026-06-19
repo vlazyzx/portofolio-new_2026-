@@ -31,6 +31,8 @@ class Config:
     ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@ikh.dev")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "password123")
     ADMIN_NAME = os.getenv("ADMIN_NAME", "Admin")
+    ADMIN_SESSION_MAX_AGE_MINUTES = int(os.getenv("ADMIN_SESSION_MAX_AGE_MINUTES", "480"))
+    ADMIN_IDLE_TIMEOUT_MINUTES = int(os.getenv("ADMIN_IDLE_TIMEOUT_MINUTES", "30"))
 
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     API_LOG_BODY = os.getenv("API_LOG_BODY", "true").lower() == "true"

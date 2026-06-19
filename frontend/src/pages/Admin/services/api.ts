@@ -274,12 +274,26 @@ export async function login(email: string, password: string): Promise<{ token: s
 
   localStorage.setItem('admin_token', data.token);
   localStorage.setItem('admin_user', JSON.stringify(data.user));
+  localStorage.setItem('admin_last_active_at', String(Date.now()));
   return { token: data.token, user: data.user };
 }
 
-export function logout(): void {
-  localStorage.removeItem('admin_token');
-  localStorage.removeItem('admin_user');
+export async function logout(): Promise<void> {
+  const token = getToken();
+
+  try {
+    if (token) {
+      await requestBody('/auth/logout', {
+        method: 'POST',
+      });
+    }
+  } catch {
+    // noop
+  } finally {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('admin_last_active_at');
+  }
 }
 
 export function getStoredUser(): User | null {
@@ -293,6 +307,12 @@ export function getStoredUser(): User | null {
     localStorage.removeItem('admin_token');
     return null;
   }
+}
+
+export async function getCurrentUser(): Promise<User> {
+  const data = await requestBody<ApiEnvelope<never> & { user?: User }>('/auth/me');
+  if (!data.user) throw new Error('Sesi admin tidak valid.');
+  return data.user;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {

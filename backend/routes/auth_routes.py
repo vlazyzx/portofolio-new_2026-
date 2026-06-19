@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from pymongo.errors import PyMongoError
 
 from config import Config
-from services.auth import create_session, get_current_session
+from services.auth import create_session, delete_session, get_bearer_token, get_current_session
 from services.db import mongo_error_response, serialize_document
 
 
@@ -49,7 +49,7 @@ def me():
     session = get_current_session()
 
     if session is None:
-        return jsonify({"status": "error", "message": "Token tidak valid atau belum login."}), 401
+        return jsonify({"status": "error", "message": "Sesi admin berakhir atau token tidak valid."}), 401
 
     return jsonify(
         {
@@ -63,3 +63,15 @@ def me():
             "session": serialize_document(session),
         }
     )
+
+
+@auth_bp.post("/logout")
+def logout():
+    token = get_bearer_token()
+    if token:
+        try:
+            delete_session(token)
+        except PyMongoError:
+            return jsonify({"status": "error", "message": "Gagal menghapus sesi admin."}), 500
+
+    return jsonify({"status": "success", "message": "Logout berhasil."})

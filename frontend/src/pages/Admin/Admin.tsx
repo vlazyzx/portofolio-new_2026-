@@ -55,12 +55,12 @@ function AppInner() {
 export default function Admin() {
   return (
     <div className="admin-page">
-      <AuthProvider>
-        <ToastProvider>
+      <ToastProvider>
+        <AuthProvider>
           <AppInner />
           <ToastContainer />
-        </ToastProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ToastProvider>
     </div>
   );
 }
