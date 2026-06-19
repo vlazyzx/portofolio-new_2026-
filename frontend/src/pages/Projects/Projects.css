@@ -69,6 +69,13 @@
   overflow: hidden;
 }
 
+.pj-thumb-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .pj-bg {
   font-family: 'Syne', sans-serif;
   font-size: 58px;
@@ -395,9 +402,8 @@
 
 .project-shot-screen {
   min-height: calc(clamp(280px, 42vw, 430px) - 34px);
-  display: grid;
-  grid-template-columns: minmax(90px, .38fr) minmax(0, 1fr);
-  align-items: end;
+  display: flex;
+  align-items: stretch;
   gap: clamp(14px, 2.4vw, 24px);
   padding: clamp(18px, 3vw, 30px);
   background:
@@ -406,6 +412,55 @@
     repeating-linear-gradient(90deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 18px),
     var(--sf);
   position: relative;
+  overflow: hidden;
+}
+
+.project-shot-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform .28s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.project-shot-slide {
+  min-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-shot-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  background: rgba(9, 9, 12, .72);
+  color: var(--tx);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.project-shot-arrow:hover {
+  color: var(--tone);
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, rgba(9, 9, 12, .86));
+}
+
+.project-shot-arrow-left {
+  left: 14px;
+}
+
+.project-shot-arrow-right {
+  right: 14px;
 }
 
 .project-shot-screen::after {
@@ -457,6 +512,7 @@
   height: 100%;
   object-fit: cover;
   border-radius: 10px;
+  display: block;
 }
 
 .project-gallery-tabs {
@@ -558,6 +614,7 @@
   font-size: 13px;
   line-height: 1.7;
   word-break: break-word;
+  white-space: pre-line;
 }
 
 .project-modal-title-text {
@@ -665,11 +722,36 @@
   }
 }
 
+@media (min-width: 761px) {
+  .project-modal {
+    place-items: start center;
+    padding: 104px 32px 32px;
+  }
+
+  .project-modal-panel {
+    width: min(860px, 100%);
+    max-height: min(590px, calc(100svh - 198px));
+    gap: clamp(12px, 1.8vw, 18px);
+    padding: clamp(14px, 1.8vw, 20px);
+  }
+
+  .project-modal-close {
+    top: 16px;
+    right: 16px;
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+    background: rgba(9, 9, 12, .92);
+    border-color: rgba(255, 255, 255, .18);
+  }
+}
+
 @media (max-width: 760px) {
   .project-modal {
     align-items: end;
     padding: 12px;
   }
+
 
   .project-modal-panel {
     max-height: calc(100svh - 24px);
@@ -688,8 +770,7 @@
 
   .project-shot-screen {
     min-height: 266px;
-    grid-template-columns: 1fr;
-    align-content: end;
+    align-items: end;
   }
 
   .project-gallery-tabs {
@@ -1194,6 +1275,79 @@
 .project-modal {
   padding-bottom: max(42px, calc(env(safe-area-inset-bottom) + 24px));
 }
+
+@media (min-width: 761px) {
+  body.project-page-lock,
+  body.project-page-lock .app-main {
+    overflow: hidden;
+  }
+
+  .project-modal {
+    place-items: start center;
+    padding: 96px 32px 32px;
+    overflow: hidden;
+  }
+
+  .project-modal-panel {
+    width: min(980px, 100%);
+    height: calc(100svh - 164px);
+    max-height: calc(100svh - 164px);
+    display: grid;
+    align-items: stretch;
+    grid-template-columns: minmax(360px, 1fr) minmax(0, .96fr);
+    gap: clamp(16px, 2vw, 24px);
+    padding: clamp(16px, 2vw, 22px);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .project-modal-close {
+    top: 16px;
+    right: 16px;
+    width: 42px;
+    height: 42px;
+    z-index: 10;
+  }
+
+  .project-modal-media {
+    min-height: 0;
+  }
+
+  .project-shot {
+    min-height: clamp(300px, 36vw, 430px);
+  }
+
+  .project-shot-screen {
+    min-height: calc(clamp(300px, 36vw, 430px) - 34px);
+  }
+
+  .project-modal-copy {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    padding-right: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--tone) 48%, var(--bd)) transparent;
+  }
+
+  .project-modal-copy::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .project-modal-copy::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--tone) 48%, var(--bd));
+    border-radius: 99px;
+  }
+}
+
 
 .project-modal-panel {
   margin-bottom: clamp(18px, 4svh, 42px);

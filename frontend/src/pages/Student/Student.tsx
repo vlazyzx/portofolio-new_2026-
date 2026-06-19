@@ -26,7 +26,7 @@ export default function Student({ onNavigate: _onNavigate }: StudentProps) {
   return (
     <div className="page student-page">
       <section className="wrap sec">
-        <SectionHeader eyebrow="Dunia Akademik" title="Profil" accent="mahasiswa." />
+        <SectionHeader eyebrow="Dunia Akademik" title="Profil" accent="Pelajar." />
 
         <article className="student-profile card edge-panel">
           <div className="student-main">

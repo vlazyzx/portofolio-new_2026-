@@ -150,10 +150,10 @@ export function Spinner({ size = 16 }: { size?: number }) {
 // ── Toast Container ───────────────────────────────────────────
 
 const toastIcons: Record<ToastType, ReactNode> = {
-  success: <CheckCircle size={15} />,
-  error:   <AlertCircle size={15} />,
-  warning: <AlertTriangle size={15} />,
-  info:    <Info size={15} />,
+  success: <CheckCircle size={18} />,
+  error:   <AlertCircle size={18} />,
+  warning: <AlertTriangle size={18} />,
+  info:    <Info size={18} />,
 };
 const toastColors: Record<ToastType, string> = {
   success: 'border-ok/30 text-ok',
@@ -161,24 +161,55 @@ const toastColors: Record<ToastType, string> = {
   warning: 'border-warn/30 text-warn',
   info:    'border-accent/30 text-accent',
 };
+const toastTitles: Record<ToastType, string> = {
+  success: 'Data berhasil disimpan',
+  error: 'Terjadi kesalahan',
+  warning: 'Perlu perhatian',
+  info: 'Informasi',
+};
 
 export function ToastContainer() {
   const { toasts, remove } = useToast();
+
+  if (toasts.length === 0) return null;
+
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-[340px] w-full px-4">
-      {toasts.map(t => (
-        <div
-          key={t.id}
-          className={`flex items-start gap-3 bg-surface border rounded-xl px-4 py-3
-                      shadow-xl anim-fade-up ${toastColors[t.type]}`}
-        >
-          <span className="mt-px flex-shrink-0">{toastIcons[t.type]}</span>
-          <p className="text-[13px] text-tx flex-1 leading-relaxed">{t.message}</p>
-          <button type="button" onClick={() => remove(t.id)} className="text-sub hover:text-tx ml-1 flex-shrink-0">
-            <X size={14} />
-          </button>
-        </div>
-      ))}
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
+      <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px]" />
+      <div className="relative w-full max-w-md flex flex-col gap-3">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto relative overflow-hidden rounded-2xl border bg-surface/95
+                        px-5 py-4 shadow-[0_30px_80px_rgba(0,0,0,0.42),0_0_40px_rgba(255,122,53,0.08)]
+                        modal-enter ${toastColors[t.type]}`}
+          >
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-current to-transparent opacity-80" />
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-2xl border border-current/20 bg-white/[0.04] flex items-center justify-center flex-shrink-0">
+                {toastIcons[t.type]}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="font-syne font-bold text-[16px] text-tx tracking-tight mb-1">
+                  {toastTitles[t.type]}
+                </div>
+                <p className="text-[13px] text-sub leading-relaxed break-words">
+                  {t.message}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => remove(t.id)}
+                className="text-sub hover:text-tx flex-shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -348,20 +379,38 @@ export function TagInput({ label, tags, onChange, placeholder = 'Ketik lalu Ente
 // ── Image Uploader ────────────────────────────────────────────
 
 interface ImageUploaderProps {
-  value: string;
-  onChange: (url: string) => void;
+  value: string | string[];
+  onChange: (url: string | string[]) => void;
   label?: string;
   id?: string;
   name?: string;
   maxWidth?: number;
   quality?: number;
+  multiple?: boolean;
+  maxFiles?: number;
 }
-export function ImageUploader({ value, onChange, label, id, name, maxWidth = 1200, quality = 0.78 }: ImageUploaderProps) {
+export function ImageUploader({
+  value,
+  onChange,
+  label,
+  id,
+  name,
+  maxWidth = 1200,
+  quality = 0.78,
+  multiple = false,
+  maxFiles = 5,
+}: ImageUploaderProps) {
   const generatedId = useId();
   const baseId = id ?? generatedId;
   const fileId = `${baseId}-file`;
   const urlId = `${baseId}-url`;
   const fieldName = name ?? baseId;
+  const isMultiple = multiple;
+  const images = isMultiple
+    ? Array.isArray(value) ? value.filter(Boolean) : value ? [value] : []
+    : Array.isArray(value) ? value[0] ? [value[0]] : [] : value ? [value] : [];
+  const currentValue = images[0] || '';
+  const urlsValue = isMultiple ? images.join('\n') : currentValue;
 
   async function compressImage(file: File): Promise<string> {
     const imageUrl = URL.createObjectURL(file);
@@ -391,18 +440,47 @@ export function ImageUploader({ value, onChange, label, id, name, maxWidth = 120
     }
   }
 
+  function emitImages(nextImages: string[]) {
+    onChange(isMultiple ? nextImages.slice(0, maxFiles) : (nextImages[0] || ''));
+  }
+
+  function removeImage(index: number) {
+    emitImages(images.filter((_, currentIndex) => currentIndex !== index));
+  }
+
+  function updateFromText(raw: string) {
+    if (isMultiple) {
+      const nextImages = raw.split('\n').map(item => item.trim()).filter(Boolean).slice(0, maxFiles);
+      onChange(nextImages);
+      return;
+    }
+
+    onChange(raw);
+  }
+
+  async function toDataUrl(file: File): Promise<string> {
+    try {
+      return await compressImage(file);
+    } catch {
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = ev => resolve(ev.target?.result as string);
+        reader.onerror = () => reject(new Error('Gagal membaca gambar.'));
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return;
+    const files = Array.from(e.target.files || []).filter(file => file.type.startsWith('image/'));
+    if (files.length === 0) return;
 
     try {
-      const compressed = await compressImage(file);
-      onChange(compressed);
-    } catch {
-      const reader = new FileReader();
-      reader.onload = ev => onChange(ev.target?.result as string);
-      reader.readAsDataURL(file);
+      const remaining = isMultiple ? Math.max(0, maxFiles - images.length) : 1;
+      if (remaining === 0) return;
+      const selectedFiles = files.slice(0, remaining);
+      const nextImages = await Promise.all(selectedFiles.map(toDataUrl));
+      emitImages(isMultiple ? [...images, ...nextImages] : nextImages);
     } finally {
       e.target.value = '';
     }
@@ -414,35 +492,46 @@ export function ImageUploader({ value, onChange, label, id, name, maxWidth = 120
         <span className="font-mono text-[11px] text-sub uppercase tracking-[0.08em]">{label}</span>
       )}
       <div className="flex gap-3 items-start flex-wrap">
-        {value && (
-          <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-border">
-            <img src={value} className="w-full h-full object-cover" alt="preview" />
+        {images.map((image, index) => (
+          <div key={`${image}-${index}`} className="relative w-24 h-24 rounded-xl overflow-hidden border border-border">
+            <img src={image} className="w-full h-full object-cover" alt={`preview-${index + 1}`} />
+            {index === 0 && (
+              <span className="absolute left-1 top-1 rounded-md bg-accent px-1.5 py-0.5 text-[9px] font-mono text-white">
+                COVER
+              </span>
+            )}
             <button
               type="button"
-              onClick={() => onChange('')}
+              onClick={() => removeImage(index)}
               className="absolute top-1 right-1 w-5 h-5 rounded-full bg-danger text-white
                          flex items-center justify-center"
             >
               <X size={10} />
             </button>
           </div>
+        ))}
+        {(!isMultiple || images.length < maxFiles) && (
+          <label htmlFor={fileId} className="flex flex-col items-center justify-center w-24 h-24 border
+                             border-dashed border-border rounded-xl cursor-pointer
+                             text-sub hover:border-accent hover:text-accent transition-colors">
+            <Loader size={20} />
+            <span className="text-[10px] mt-1">Unggah</span>
+            <input id={fileId} name={`${fieldName}-file`} type="file" accept="image/*" multiple={isMultiple} className="hidden" onChange={handleFile} />
+          </label>
         )}
-        <label htmlFor={fileId} className="flex flex-col items-center justify-center w-24 h-24 border
-                           border-dashed border-border rounded-xl cursor-pointer
-                           text-sub hover:border-accent hover:text-accent transition-colors">
-          <Loader size={20} />
-          <span className="text-[10px] mt-1">Unggah</span>
-          <input id={fileId} name={`${fieldName}-file`} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-        </label>
       </div>
-      <input
+      <div className="font-mono text-[10px] text-sub">
+        {isMultiple ? `Maksimal ${maxFiles} gambar. Foto pertama jadi cover utama.` : 'Unggah 1 gambar atau tempel URL.'}
+      </div>
+      <textarea
         id={urlId}
         name={`${fieldName}-url`}
         aria-label={label ? `${label} URL` : 'Image URL'}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="input-field text-[12px]"
-        placeholder="atau tempel URL gambar..."
+        value={urlsValue}
+        onChange={e => updateFromText(e.target.value)}
+        rows={isMultiple ? 4 : 2}
+        className="input-field text-[12px] resize-y"
+        placeholder={isMultiple ? 'atau tempel URL gambar, satu URL per baris...' : 'atau tempel URL gambar...'}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SectionHeader from '../../components/SectionHeader';
 import Footer from '../../components/Footer';
 import { api } from '../../services/api';
@@ -79,7 +80,8 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
   const [selectedProject, setSelectedProject] = useState<ProjectDetail | null>(null);
   const [activeShot, setActiveShot] = useState(0);
 
-  useEffect(() => {
+  const loadProjects = () => {
+    setLoading(true);
     api.getProjects()
       .then((raw: unknown) => {
         const res = raw as Record<string, unknown>;
@@ -90,6 +92,15 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
       })
       .catch(() => setAllProjects([]))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadProjects();
+    window.addEventListener('projects-updated', loadProjects);
+
+    return () => {
+      window.removeEventListener('projects-updated', loadProjects);
+    };
   }, []);
 
   const visibleProjects = useMemo(
@@ -98,8 +109,11 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
   );
 
   const openProject = (project: ProjectDetail) => {
-    setSelectedProject(project);
-    setActiveShot(0);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    requestAnimationFrame(() => {
+      setSelectedProject(project);
+      setActiveShot(0);
+    });
   };
 
   const closeProject = () => setSelectedProject(null);
@@ -127,14 +141,19 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
 
     const handleEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') closeProject();
+      if (event.key === 'ArrowLeft') goToPreviousShot();
+      if (event.key === 'ArrowRight') goToNextShot();
     };
 
-    const previousOverflow = document.body.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     window.addEventListener('keydown', handleEscape);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       window.removeEventListener('keydown', handleEscape);
     };
   }, [selectedProject]);
@@ -144,12 +163,25 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
     return () => document.body.classList.remove('project-page-lock');
   }, []);
 
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const refreshedProject = allProjects.find(project => project.slug === selectedProject.slug || project.title === selectedProject.title);
+    if (!refreshedProject) {
+      setSelectedProject(null);
+      return;
+    }
+
+    setSelectedProject(refreshedProject);
+    setActiveShot(current => Math.min(current, Math.max(refreshedProject.gallery.length - 1, 0)));
+  }, [allProjects, selectedProject]);
+
   const selectedShot = selectedProject?.gallery[activeShot];
 
   return (
     <div className="page projects-page">
       <section className="wrap sec">
-        <SectionHeader eyebrow="Karya Pilihan" title="Hal yang sudah" accent="saya bangun." />
+        <SectionHeader eyebrow="Karya Pilihan" title="Project saya yang sudah" accent="Kembangkan" />
         <div className="project-filter edge-panel" aria-label="Kategori proyek">
           {projectCategories.map(category => (
             <button
@@ -186,8 +218,14 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
                   style={{ '--tone': project.tone, '--delay': `${index * 70}ms` } as CSSProperties}
                 >
                   <div className="pj-thumb">
-                    <div className="pj-bg">{project.mark}</div>
-                    <div className="pj-orbit"><span /><span /><span /></div>
+                    {project.images[0] ? (
+                      <img className="pj-thumb-image" src={project.images[0]} alt={project.title} />
+                    ) : (
+                      <>
+                        <div className="pj-bg">{project.mark}</div>
+                        <div className="pj-orbit"><span /><span /><span /></div>
+                      </>
+                    )}
                   </div>
                   <div className="pj-body">
                     <div className="pj-stack">
@@ -229,19 +267,50 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
                   <span />
                 </div>
                 <div className="project-shot-screen">
-                  {selectedProject.images[activeShot]
-                    ? <img className="project-shot-image" src={selectedProject.images[activeShot]} alt={selectedProject.title} />
-                    : (
-                      <>
-                        <div className="project-shot-mark">{selectedProject.mark}</div>
-                        {selectedShot && (
-                          <div>
-                            <strong>{selectedShot.title}</strong>
-                            <p>{selectedShot.caption}</p>
+                  {selectedProject.images.length > 0 ? (
+                    <>
+                      <div
+                        className="project-shot-track"
+                        style={{ transform: `translateX(-${activeShot * 100}%)` }}
+                      >
+                        {selectedProject.images.map((image, index) => (
+                          <div className="project-shot-slide" key={`${selectedProject.slug || selectedProject.title}-${index}`}>
+                            <img className="project-shot-image" src={image} alt={`${selectedProject.title} ${index + 1}`} />
                           </div>
-                        )}
-                      </>
-                    )}
+                        ))}
+                      </div>
+                      {selectedProject.images.length > 1 && (
+                        <>
+                          <button
+                            className="project-shot-arrow project-shot-arrow-left"
+                            type="button"
+                            onClick={goToPreviousShot}
+                            aria-label="Foto sebelumnya"
+                          >
+                            <ChevronLeft size={18} />
+                          </button>
+                          <button
+                            className="project-shot-arrow project-shot-arrow-right"
+                            type="button"
+                            onClick={goToNextShot}
+                            aria-label="Foto berikutnya"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="project-shot-mark">{selectedProject.mark}</div>
+                      {selectedShot && (
+                        <div>
+                          <strong>{selectedShot.title}</strong>
+                          <p>{selectedShot.caption}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 

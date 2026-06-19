@@ -1,0 +1,26 @@
+.text-type {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: pre-wrap;
+  line-height: 1;
+}
+
+.text-type__content {
+  display: inline-block;
+  line-height: inherit;
+}
+
+.text-type__cursor {
+  margin-left: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0.38em;
+  line-height: 1;
+  vertical-align: baseline;
+  opacity: 1;
+}
+
+.text-type__cursor--hidden {
+  display: none;
+}

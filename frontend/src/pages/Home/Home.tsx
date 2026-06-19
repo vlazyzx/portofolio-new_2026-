@@ -1,6 +1,8 @@
 import { Suspense, useEffect, useState, type CSSProperties } from 'react';
 import Footer from '../../components/Footer';
 import Lanyard from '../../components/Lanyard/Lanyard';
+import SplitText from '../../components/SplitText';
+import TextType from '../../components/TextType';
 import { api } from '../../services/api';
 import type { HomeContent, PageId } from '../../types/portfolio';
 import './Home.css';
@@ -57,6 +59,11 @@ export default function Home({ onNavigate, refreshToken = 0 }: HomeProps) {
     gpa: 98,
   };
   const lanyardImage = home.lanyardImage || '/images/muhammad-ikhsan-lanyard-card.jpg';
+  const nameParts = home.name.trim().split(/\s+/).filter(Boolean);
+  const firstLineName = nameParts[0] || home.name;
+  const secondLineName = nameParts[1] || (home.name.includes(' ') ? '' : 'Ikhsan');
+  const thirdLineName = nameParts.slice(2).join(' ') || '';
+  const bentoVariants = ['primary', 'wide', 'tall', 'accent'];
 
   return (
     <div className="page home-page">
@@ -68,9 +75,61 @@ export default function Home({ onNavigate, refreshToken = 0 }: HomeProps) {
               <span className="mono accent-text">{home.eyebrow}</span>
             </div>
             <div className="h-name" aria-label={`${home.name} Pengembang Kreatif`}>
-              <span className="l1">{home.name.split(' ')[0] || ''}</span>
-              <span className="l2">{home.name.split(' ').slice(1).join(' ') || (home.name.includes(' ') ? '' : 'Ikhsan')}</span>
-              <span className="l3">Pengembang Kreatif.</span>
+              <SplitText
+                tag="span"
+                text={firstLineName}
+                className="l1"
+                delay={65}
+                duration={0.72}
+                ease="power3.out"
+                splitType="words"
+                from={{ opacity: 0, y: 34 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.15}
+                rootMargin="-80px"
+                textAlign="left"
+              />
+              <SplitText
+                tag="span"
+                text={secondLineName}
+                className="l2"
+                delay={55}
+                duration={0.68}
+                ease="power3.out"
+                splitType="words"
+                from={{ opacity: 0, y: 28 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.15}
+                rootMargin="-60px"
+                textAlign="left"
+              />
+              {thirdLineName ? (
+                <SplitText
+                  tag="span"
+                  text={thirdLineName}
+                  className="l2 l2b"
+                  delay={48}
+                  duration={0.66}
+                  ease="power3.out"
+                  splitType="words"
+                  from={{ opacity: 0, y: 24 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.15}
+                  rootMargin="-50px"
+                  textAlign="left"
+                />
+              ) : null}
+              <TextType
+                as="span"
+                text={["Backend Developer", "DevOps Developer"]}
+                className="l3"
+                typingSpeed={64}
+                deletingSpeed={26}
+                pauseDuration={1900}
+                initialDelay={650}
+                showCursor={false}
+                startOnVisible={true}
+              />
             </div>
             <p className="h-desc">{home.heroDescription}</p>
             <div className="h-btns">
@@ -122,17 +181,31 @@ export default function Home({ onNavigate, refreshToken = 0 }: HomeProps) {
 
       <section className="wrap sec nav-section">
         <div className="ey">Navigasi</div>
-        <div className="nc-grid edge-panel">
-          {home.cards.length ? home.cards.map((card, index) => (
-            <button className="nc" key={card.id || card.page} type="button" onClick={() => onNavigate(card.page)} style={{ '--delay': `${index * 100}ms` } as CSSProperties}>
-              <span className="tag">{card.tag}</span>
-              <span className="nc-body">
-                <span className="nc-title">{card.title}</span>
-                <span className="nc-desc">{card.desc}</span>
-              </span>
-              <span className="nc-foot"><span className="mono">{card.meta}</span><span className="nc-arrow">-&gt;</span></span>
-            </button>
-          )) : <div className="mono">Kartu navigasi belum tersedia.</div>}
+        <div className="nc-grid">
+          {home.cards.length ? home.cards.map((card, index) => {
+            const variant = bentoVariants[index % bentoVariants.length];
+            const isPrimary = index === 0;
+
+            return (
+              <button
+                className={`nc nc-${variant} ${isPrimary ? 'nc-featured' : ''}`.trim()}
+                key={card.id || card.page}
+                type="button"
+                onClick={() => onNavigate(card.page)}
+                style={{ '--delay': `${index * 100}ms` } as CSSProperties}
+              >
+                <span className="nc-top">
+                  <span className="tag">{card.tag}</span>
+                  <span className="nc-index mono">{String(index + 1).padStart(2, '0')}</span>
+                </span>
+                <span className="nc-body">
+                  <span className="nc-title">{card.title}</span>
+                  <span className="nc-desc">{card.desc}</span>
+                </span>
+                <span className="nc-foot"><span className="mono">{card.meta}</span><span className="nc-arrow">-&gt;</span></span>
+              </button>
+            );
+          }) : <div className="mono">Kartu navigasi belum tersedia.</div>}
         </div>
       </section>
       <Footer />

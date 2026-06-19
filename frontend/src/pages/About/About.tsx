@@ -99,7 +99,7 @@ export default function About({ onNavigate: _onNavigate, refreshToken = 0 }: Abo
       <section className="wrap sec">
         <div className="about-hero edge-panel">
           <div className="about-hero-copy">
-            <SectionHeader eyebrow="Siapa Saya" title="Pengembang yang berpikir" accent="seperti desainer." />
+            <SectionHeader eyebrow="Siapa Saya" title="Pengembang yang berpikir Seperti" accent="Engineering" />
             <p className="about-hero-text">
               {profile?.bio || 'Saya membangun pengalaman digital yang rapi, cepat, dan terasa hidup di setiap layar.'}
             </p>

@@ -49,13 +49,26 @@ export function ProjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Project | null>(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [coverImage, setCoverImage] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
+  async function loadProjects(showLoader = false) {
+    if (showLoader) setLoading(true);
+    try {
+      const data = await getProjects();
+      setProjects(data);
+      return data;
+    } catch (err: unknown) {
+      toast(errorMessage(err, 'Gagal memuat project.'), 'error');
+      return [];
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    getProjects()
-      .then(setProjects)
-      .catch(err => toast(errorMessage(err, 'Gagal memuat project.'), 'error'))
-      .finally(() => setLoading(false));
+    loadProjects(true);
   }, [toast]);
 
   const filtered = useMemo(() => projects.filter(p => {
@@ -68,12 +81,16 @@ export function ProjectsPage() {
   function openCreate() {
     setEditTarget(null);
     setFormData(EMPTY_FORM);
+    setCoverImage('');
+    setGalleryImages([]);
     setModalOpen(true);
   }
   function openEdit(p: Project) {
     setEditTarget(p);
     const { id, createdAt, updatedAt, ...rest } = p;
     setFormData(rest);
+    setCoverImage(p.images?.[0] || '');
+    setGalleryImages(p.images?.slice(1, 6) || []);
     setModalOpen(true);
   }
   function set(key: keyof typeof formData, value: unknown) {
@@ -82,17 +99,18 @@ export function ProjectsPage() {
 
   async function handleSave() {
     if (!formData.title.trim()) { toast('Judul project wajib diisi', 'error'); return; }
+    const mergedImages = [coverImage.trim(), ...galleryImages.map(image => image.trim())].filter(Boolean).slice(0, 6);
+    const payload = { ...formData, images: mergedImages };
     setSaving(true);
     try {
       if (editTarget) {
-        const updated = await updateProject(editTarget.id, formData);
-        setProjects(prev => prev.map(p => p.id === editTarget.id ? updated : p));
+        await updateProject(editTarget.id, payload);
         toast('Project berhasil diperbarui');
       } else {
-        const created = await createProject(formData);
-        setProjects(prev => [created, ...prev]);
+        await createProject(payload);
         toast('Project berhasil ditambahkan');
       }
+      await loadProjects();
       window.dispatchEvent(new Event('projects-updated'));
       setModalOpen(false);
     } catch (err: unknown) {
@@ -107,7 +125,7 @@ export function ProjectsPage() {
     setDeleting(true);
     try {
       await deleteProject(deleteTarget.id);
-      setProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
+      await loadProjects();
       window.dispatchEvent(new Event('projects-updated'));
       toast('Project dihapus');
     } catch (err: unknown) {
@@ -285,8 +303,8 @@ export function ProjectsPage() {
             </div>
             <div className="sm:col-span-2">
               <TextAreaField label="Deskripsi Lengkap" value={formData.longDescription}
-                onChange={e => set('longDescription', e.target.value)} rows={3}
-                placeholder="Penjelasan detail tentang project ini..." />
+                onChange={e => set('longDescription', e.target.value)} rows={6}
+                placeholder="Penjelasan detail tentang project ini... Gunakan Enter untuk paragraf baru." />
             </div>
           </div>
         </div>
@@ -308,9 +326,25 @@ export function ProjectsPage() {
               <TagInput label="Stack Teknologi" tags={formData.stack}
                 onChange={tags => set('stack', tags)} placeholder="React, TypeScript, ..." />
             </div>
-            <div className="sm:col-span-2">
-              <ImageUploader label="Gambar Sampul" value={formData.images?.[0] || ''}
-                onChange={url => set('images', url ? [url] : [])} maxWidth={1200} quality={0.78} />
+            <div>
+              <ImageUploader
+                label="Gambar Cover"
+                value={coverImage}
+                onChange={url => setCoverImage(Array.isArray(url) ? url[0] || '' : url)}
+                maxWidth={1200}
+                quality={0.78}
+              />
+            </div>
+            <div>
+              <ImageUploader
+                label="Galeri Project"
+                value={galleryImages}
+                onChange={urls => setGalleryImages(Array.isArray(urls) ? urls : urls ? [urls] : [])}
+                maxWidth={1200}
+                quality={0.78}
+                multiple
+                maxFiles={5}
+              />
             </div>
           </div>
         </div>
