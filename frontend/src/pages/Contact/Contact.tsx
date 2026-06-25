@@ -35,16 +35,11 @@ export default function Contact({ onNavigate: _onNavigate }: ContactProps) {
   };
 
   useEffect(() => {
-    Promise.all([api.getProfile(), api.getSocialLinks(), api.getSocialLinkItems()])
-      .then(([profileData, socialLinksData, items]) => {
-        setProfile(profileData);
-        setLinks(socialLinksData);
-        setSocialItems(items);
-      })
-      .catch(() => {
-        setProfile(null);
-        setLinks(null);
-        setSocialItems([]);
+    Promise.allSettled([api.getProfile(), api.getSocialLinks(), api.getSocialLinkItems()])
+      .then(([profileResult, linksResult, itemsResult]) => {
+        setProfile(profileResult.status === 'fulfilled' ? profileResult.value : null);
+        setLinks(linksResult.status === 'fulfilled' ? linksResult.value : null);
+        setSocialItems(itemsResult.status === 'fulfilled' ? itemsResult.value : []);
       })
       .finally(() => setLoadingInfo(false));
   }, []);

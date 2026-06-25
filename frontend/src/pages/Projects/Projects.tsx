@@ -76,6 +76,7 @@ interface ProjectsProps {
 export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
   const [allProjects, setAllProjects] = useState<ProjectDetail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState<ProjectCategory>('all');
   const [selectedProject, setSelectedProject] = useState<ProjectDetail | null>(null);
   const [activeShot, setActiveShot] = useState(0);
@@ -89,8 +90,12 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
         const list = Array.isArray(data) ? data : [];
         const adapted = list.map(adaptProject).filter((project): project is ProjectDetail => project !== null);
         setAllProjects(adapted);
+        setLoadError(false);
       })
-      .catch(() => setAllProjects([]))
+      .catch(() => {
+        setAllProjects([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -246,8 +251,12 @@ export default function Projects({ onNavigate: _onNavigate }: ProjectsProps) {
               <div className="project-empty-mark">API</div>
               <div>
                 <div className="mono project-empty-ey">Data backend</div>
-                <h2>Data project masih kosong.</h2>
-                <p>Tambah project melalui admin dashboard untuk menampilkannya di sini.</p>
+                <h2>{loadError ? 'Project belum bisa dimuat.' : 'Data project masih kosong.'}</h2>
+                <p>
+                  {loadError
+                    ? 'Backend sedang tidak merespons atau data gagal diambil. Coba muat ulang halaman.'
+                    : 'Tambah project melalui admin dashboard untuk menampilkannya di sini.'}
+                </p>
               </div>
             </div>
           )}

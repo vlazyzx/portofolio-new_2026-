@@ -19,9 +19,20 @@ export default function Home({ onNavigate, refreshToken = 0 }: HomeProps) {
   useEffect(() => {
     const loadHome = () => {
       setLoading(true);
-      Promise.all([api.getHome(), api.getProjects()])
-        .then(([homeData, projects]) => {
-          const projectCount = Array.isArray(projects) ? projects.length : 0;
+      Promise.allSettled([api.getHome(), api.getProjects()])
+        .then(([homeResult, projectsResult]) => {
+          if (homeResult.status !== 'fulfilled') {
+            setHome(null);
+            return;
+          }
+
+          const homeData = homeResult.value;
+          const fallbackProjectCount = Number(homeData.stats?.completedProjects?.value || 0);
+          const projectCount =
+            projectsResult.status === 'fulfilled' && Array.isArray(projectsResult.value)
+              ? projectsResult.value.length
+              : fallbackProjectCount;
+
           setHome({
             ...homeData,
             stats: {

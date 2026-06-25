@@ -381,6 +381,7 @@ export function TagInput({ label, tags, onChange, placeholder = 'Ketik lalu Ente
 interface ImageUploaderProps {
   value: string | string[];
   onChange: (url: string | string[]) => void;
+  onFilesChange?: (files: File | File[] | null) => void;
   label?: string;
   id?: string;
   name?: string;
@@ -388,10 +389,12 @@ interface ImageUploaderProps {
   quality?: number;
   multiple?: boolean;
   maxFiles?: number;
+  fileOnly?: boolean;
 }
 export function ImageUploader({
   value,
   onChange,
+  onFilesChange,
   label,
   id,
   name,
@@ -399,6 +402,7 @@ export function ImageUploader({
   quality = 0.78,
   multiple = false,
   maxFiles = 5,
+  fileOnly = false,
 }: ImageUploaderProps) {
   const generatedId = useId();
   const baseId = id ?? generatedId;
@@ -446,9 +450,12 @@ export function ImageUploader({
 
   function removeImage(index: number) {
     emitImages(images.filter((_, currentIndex) => currentIndex !== index));
+    onFilesChange?.(isMultiple ? [] : null);
   }
 
   function updateFromText(raw: string) {
+    if (fileOnly) return;
+    onFilesChange?.(isMultiple ? [] : null);
     if (isMultiple) {
       const nextImages = raw.split('\n').map(item => item.trim()).filter(Boolean).slice(0, maxFiles);
       onChange(nextImages);
@@ -479,7 +486,10 @@ export function ImageUploader({
       const remaining = isMultiple ? Math.max(0, maxFiles - images.length) : 1;
       if (remaining === 0) return;
       const selectedFiles = files.slice(0, remaining);
-      const nextImages = await Promise.all(selectedFiles.map(toDataUrl));
+      onFilesChange?.(isMultiple ? selectedFiles : selectedFiles[0] || null);
+      const nextImages = fileOnly
+        ? selectedFiles.map(file => URL.createObjectURL(file))
+        : await Promise.all(selectedFiles.map(toDataUrl));
       emitImages(isMultiple ? [...images, ...nextImages] : nextImages);
     } finally {
       e.target.value = '';
@@ -521,18 +531,22 @@ export function ImageUploader({
         )}
       </div>
       <div className="font-mono text-[10px] text-sub">
-        {isMultiple ? `Maksimal ${maxFiles} gambar. Foto pertama jadi cover utama.` : 'Unggah 1 gambar atau tempel URL.'}
+        {fileOnly
+          ? (isMultiple ? `Maksimal ${maxFiles} gambar. Foto pertama jadi cover utama.` : 'Unggah 1 gambar.')
+          : (isMultiple ? `Maksimal ${maxFiles} gambar. Foto pertama jadi cover utama.` : 'Unggah 1 gambar atau tempel URL.')}
       </div>
-      <textarea
-        id={urlId}
-        name={`${fieldName}-url`}
-        aria-label={label ? `${label} URL` : 'Image URL'}
-        value={urlsValue}
-        onChange={e => updateFromText(e.target.value)}
-        rows={isMultiple ? 4 : 2}
-        className="input-field text-[12px] resize-y"
-        placeholder={isMultiple ? 'atau tempel URL gambar, satu URL per baris...' : 'atau tempel URL gambar...'}
-      />
+      {!fileOnly && (
+        <textarea
+          id={urlId}
+          name={`${fieldName}-url`}
+          aria-label={label ? `${label} URL` : 'Image URL'}
+          value={urlsValue}
+          onChange={e => updateFromText(e.target.value)}
+          rows={isMultiple ? 4 : 2}
+          className="input-field text-[12px] resize-y"
+          placeholder={isMultiple ? 'atau tempel URL gambar, satu URL per baris...' : 'atau tempel URL gambar...'}
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import time
 import uuid
 from typing import Any
 
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from config import Config
@@ -178,6 +178,10 @@ def create_app() -> Flask:
                 "docs": "/api/health",
             }
         )
+
+    @app.get(f"{Config.UPLOAD_URL_PREFIX}/<path:filename>")
+    def uploaded_file(filename: str):
+        return send_from_directory(Config.UPLOAD_ROOT, filename)
 
     return app
 

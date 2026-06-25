@@ -34,6 +34,10 @@ class Config:
     ADMIN_SESSION_MAX_AGE_MINUTES = int(os.getenv("ADMIN_SESSION_MAX_AGE_MINUTES", "480"))
     ADMIN_IDLE_TIMEOUT_MINUTES = int(os.getenv("ADMIN_IDLE_TIMEOUT_MINUTES", "30"))
 
+    UPLOAD_ROOT = os.getenv("UPLOAD_ROOT", os.path.join(BASE_DIR, "uploads"))
+    UPLOAD_URL_PREFIX = os.getenv("UPLOAD_URL_PREFIX", "/uploads")
+    MAX_IMAGE_SIZE_MB = int(os.getenv("MAX_IMAGE_SIZE_MB", "5"))
+
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     API_LOG_BODY = os.getenv("API_LOG_BODY", "true").lower() == "true"
     API_LOG_FILE = os.getenv("API_LOG_FILE", os.path.join(BASE_DIR, "logs", "api.log"))

@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify, request
 from pymongo import ReturnDocument
 from pymongo.errors import PyMongoError
 
+from services.auth import require_admin_session
 from services.db import get_collection, mongo_error_response, now_iso, serialize_document
+from services.media import MediaError, build_media_url, lanyard_directory, profile_directory, save_image_as_jpg, validate_image_reference
 
 
 settings_bp = Blueprint("settings", __name__)
@@ -181,9 +183,16 @@ def _patch_response(key: str):
     payload = request.get_json(silent=True) or {}
 
     try:
+        if key == "profile" and "avatar" in payload:
+            payload = {**payload, "avatar": validate_image_reference(payload.get("avatar", ""), "avatar")}
+        if key == "home" and "lanyardImage" in payload:
+            payload = {**payload, "lanyardImage": validate_image_reference(payload.get("lanyardImage", ""), "lanyardImage")}
+
         setting = _update_setting(key, payload)
         data = _normalize_home_value(setting["value"]) if key == "home" else setting["value"]
         return jsonify({"status": "success", "message": "Data disimpan ke MongoDB.", "data": data})
+    except MediaError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
     except PyMongoError as error:
         body, status = mongo_error_response(error)
         return jsonify(body), status
@@ -194,9 +203,37 @@ def get_profile():
     return _get_response("profile")
 
 
+@settings_bp.post("/profile/avatar")
+def upload_profile_avatar():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
+
+    file = request.files.get("image")
+    if file is None or not file.filename:
+        return jsonify({"status": "error", "message": "File image wajib diunggah."}), 400
+
+    try:
+        save_image_as_jpg(file, f"{profile_directory()}/profile.jpg")
+        profile = _update_setting("profile", {"avatar": build_media_url("foto-profil", "img", "profile.jpg")})
+        return jsonify({
+            "status": "success",
+            "message": "Foto profil berhasil diunggah.",
+            "data": profile["value"],
+        })
+    except MediaError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
+    except PyMongoError as error:
+        body, status = mongo_error_response(error)
+        return jsonify(body), status
+
+
 @settings_bp.patch("/profile")
 @settings_bp.put("/profile")
 def update_profile():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
     return _patch_response("profile")
 
 
@@ -205,9 +242,37 @@ def get_home():
     return _get_response("home")
 
 
+@settings_bp.post("/home/lanyard-image")
+def upload_home_lanyard_image():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
+
+    file = request.files.get("image")
+    if file is None or not file.filename:
+        return jsonify({"status": "error", "message": "File image wajib diunggah."}), 400
+
+    try:
+        save_image_as_jpg(file, f"{lanyard_directory()}/lanyard.jpg")
+        home = _update_setting("home", {"lanyardImage": build_media_url("lanyard", "img", "lanyard.jpg")})
+        return jsonify({
+            "status": "success",
+            "message": "Gambar lanyard berhasil diunggah.",
+            "data": home["value"],
+        })
+    except MediaError as error:
+        return jsonify({"status": "error", "message": str(error)}), 400
+    except PyMongoError as error:
+        body, status = mongo_error_response(error)
+        return jsonify(body), status
+
+
 @settings_bp.patch("/home")
 @settings_bp.put("/home")
 def update_home():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
     return _patch_response("home")
 
 
@@ -219,6 +284,9 @@ def get_about():
 @settings_bp.patch("/about")
 @settings_bp.put("/about")
 def update_about():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
     return _patch_response("about")
 
 
@@ -230,6 +298,9 @@ def get_student():
 @settings_bp.patch("/student")
 @settings_bp.put("/student")
 def update_student():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
     return _patch_response("student")
 
 
@@ -241,4 +312,7 @@ def get_social_links():
 @settings_bp.patch("/social-links")
 @settings_bp.put("/social-links")
 def update_social_links():
+    session, error_response = require_admin_session()
+    if error_response:
+        return error_response
     return _patch_response("social-links")

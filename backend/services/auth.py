@@ -4,6 +4,8 @@ from flask import request
 from pymongo.errors import PyMongoError
 
 from config import Config
+from flask import jsonify
+
 from services.db import get_collection, now_iso
 
 
@@ -83,3 +85,10 @@ def get_current_session() -> dict | None:
         return session
     except PyMongoError:
         return None
+
+
+def require_admin_session():
+    session = get_current_session()
+    if session is None:
+        return None, (jsonify({"status": "error", "message": "Sesi admin berakhir atau token tidak valid."}), 401)
+    return session, None

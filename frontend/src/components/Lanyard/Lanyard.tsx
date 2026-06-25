@@ -43,6 +43,17 @@ const BLANK_PIXEL =
 const FRONT_UV_RECT = { x: 0, y: 0, w: 0.5, h: 0.755 };
 const BACK_UV_RECT = { x: 0.5, y: 0, w: 0.5, h: 0.757 };
 
+function isFiniteVector3Like(value: unknown): value is { x: number; y: number; z: number } {
+  if (!value || typeof value !== 'object') return false;
+  const vector = value as { x?: unknown; y?: unknown; z?: unknown };
+  return [vector.x, vector.y, vector.z].every(item => typeof item === 'number' && Number.isFinite(item));
+}
+
+function toSafeVector3(value: unknown): THREE.Vector3 | null {
+  if (!isFiniteVector3Like(value)) return null;
+  return new THREE.Vector3(value.x, value.y, value.z);
+}
+
 export default function Lanyard({
   position = [0, 0, 30],
   gravity = [0, -40, 0],
@@ -195,24 +206,77 @@ function Band({
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar(state.camera.position.length()));
+
+      if (![vec.x, vec.y, vec.z, dragged.x, dragged.y, dragged.z].every(Number.isFinite)) {
+        return;
+      }
+
       [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
       card.current.setNextKinematicTranslation({ x: vec.x - dragged.x, y: vec.y - dragged.y, z: vec.z - dragged.z });
     }
 
     if (fixed.current && j1.current && j2.current && j3.current && card.current && band.current?.geometry) {
+      const fixedTranslation = toSafeVector3(fixed.current.translation());
+      const j1Translation = toSafeVector3(j1.current.translation());
+      const j2Translation = toSafeVector3(j2.current.translation());
+      const j3Translation = toSafeVector3(j3.current.translation());
+
+      if (!fixedTranslation || !j1Translation || !j2Translation || !j3Translation) {
+        return;
+      }
+
       [j1, j2].forEach(ref => {
-        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
-        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
-        ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)));
+        const translation = toSafeVector3(ref.current.translation());
+        if (!translation) return;
+
+        if (!ref.current.lerped || !isFiniteVector3Like(ref.current.lerped)) {
+          ref.current.lerped = translation.clone();
+          return;
+        }
+
+        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(translation)));
+        const lerpAlpha = Math.min(1, delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)));
+        ref.current.lerped.lerp(translation, lerpAlpha);
       });
 
-      curve.points[0].copy(j3.current.translation());
+      if (!isFiniteVector3Like(j1.current.lerped) || !isFiniteVector3Like(j2.current.lerped)) {
+        return;
+      }
+
+      curve.points[0].copy(j3Translation);
       curve.points[1].copy(j2.current.lerped);
       curve.points[2].copy(j1.current.lerped);
-      curve.points[3].copy(fixed.current.translation());
-      band.current.geometry.setPoints(curve.getPoints(isMobile ? 16 : 32));
-      ang.copy(card.current.angvel());
-      rot.copy(card.current.rotation());
+      curve.points[3].copy(fixedTranslation);
+
+      const curvePoints = curve.getPoints(isMobile ? 16 : 32);
+      const hasInvalidCurvePoint = curvePoints.some(point =>
+        !Number.isFinite(point.x) ||
+        !Number.isFinite(point.y) ||
+        !Number.isFinite(point.z)
+      );
+
+      if (hasInvalidCurvePoint) {
+        return;
+      }
+
+      if (!band.current.geometry || typeof band.current.geometry.setPoints !== 'function') {
+        return;
+      }
+
+      try {
+        band.current.geometry.setPoints(curvePoints);
+      } catch {
+        return;
+      }
+
+      const nextAng = toSafeVector3(card.current.angvel());
+      const nextRot = toSafeVector3(card.current.rotation());
+      if (!nextAng || !nextRot) {
+        return;
+      }
+
+      ang.copy(nextAng);
+      rot.copy(nextRot);
       card.current.setAngvel({ x: ang.x, y: ang.y - rot.y * 0.25, z: ang.z });
     }
   });
@@ -242,7 +306,12 @@ function Band({
             }}
             onPointerDown={(event: any) => {
               event.target.setPointerCapture(event.pointerId);
-              drag(new THREE.Vector3().copy(event.point).sub(vec.copy(card.current.translation())));
+              const cardTranslation = toSafeVector3(card.current?.translation?.());
+              if (!cardTranslation || !isFiniteVector3Like(event.point)) {
+                drag(false);
+                return;
+              }
+              drag(new THREE.Vector3().copy(event.point).sub(vec.copy(cardTranslation)));
             }}
           >
             <mesh geometry={nodes.card.geometry}>

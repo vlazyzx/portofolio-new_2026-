@@ -63,8 +63,44 @@ async function requestData<T>(path: string, options: RequestInit = {}): Promise<
   return body as T;
 }
 
+async function requestMultipartData<T>(path: string, formData: FormData, options: RequestInit = {}): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    method: options.method || 'POST',
+    body: formData,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+
+  const body = res.status === 204 ? null : await res.json();
+  if (!res.ok) {
+    throw new Error(apiMessage(body, `Request gagal (${res.status})`));
+  }
+
+  if (isRecord(body) && 'data' in body) return body.data as T;
+  return body as T;
+}
+
 function errorMessage(error: unknown, defaultMessage: string): string {
   return error instanceof Error ? error.message : defaultMessage;
+}
+
+function isDataImageUrl(value: unknown): boolean {
+  return typeof value === 'string' && /^data:image\//i.test(value.trim());
+}
+
+function assertNoDataImageUrl(value: unknown, fieldName: string): void {
+  if (isDataImageUrl(value)) {
+    throw new Error(`${fieldName} harus berupa URL gambar valid. Data base64 tidak diizinkan.`);
+  }
+}
+
+function assertNoDataImageUrlList(values: unknown, fieldName: string): void {
+  if (!Array.isArray(values)) return;
+  values.forEach(value => assertNoDataImageUrl(value, fieldName));
 }
 
 function normalizeCategory(value: unknown): Project['category'] {
@@ -332,6 +368,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function createProject(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
+  assertNoDataImageUrlList(data.images, 'images');
   const project = await requestData<unknown>('/projects', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -339,7 +376,16 @@ export async function createProject(data: Omit<Project, 'id' | 'createdAt' | 'up
   return normalizeProject(project);
 }
 
+export async function uploadProjectImages(id: string, payload: { cover?: File | null; gallery?: File[] }): Promise<string[]> {
+  const formData = new FormData();
+  if (payload.cover) formData.append('cover', payload.cover);
+  (payload.gallery || []).forEach(file => formData.append('gallery', file));
+  const data = await requestMultipartData<{ images?: string[] }>(`/projects/${id}/images`, formData);
+  return Array.isArray(data.images) ? data.images.map(String) : [];
+}
+
 export async function updateProject(id: string, data: Partial<Project>): Promise<Project> {
+  assertNoDataImageUrlList(data.images, 'images');
   const project = await requestData<unknown>(`/projects/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -356,10 +402,17 @@ export async function getHome(): Promise<HomeContent> {
 }
 
 export async function updateHome(data: Partial<HomeContent>): Promise<HomeContent> {
+  assertNoDataImageUrl(data.lanyardImage, 'lanyardImage');
   return normalizeHome(await requestData<unknown>('/home', {
     method: 'PATCH',
     body: JSON.stringify(data),
   }));
+}
+
+export async function uploadLanyardImage(file: File): Promise<HomeContent> {
+  const formData = new FormData();
+  formData.append('image', file);
+  return normalizeHome(await requestMultipartData<unknown>('/home/lanyard-image', formData));
 }
 
 export async function getProfile(): Promise<Profile> {
@@ -367,10 +420,17 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(data: Partial<Profile>): Promise<Profile> {
+  assertNoDataImageUrl(data.avatar, 'avatar');
   return normalizeProfile(await requestData<unknown>('/profile', {
     method: 'PATCH',
     body: JSON.stringify(data),
   }));
+}
+
+export async function uploadProfileAvatar(file: File): Promise<Profile> {
+  const formData = new FormData();
+  formData.append('image', file);
+  return normalizeProfile(await requestMultipartData<unknown>('/profile/avatar', formData));
 }
 
 export async function getAbout(): Promise<About> {

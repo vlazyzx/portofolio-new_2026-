@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       proxy: {
-        '/api': env.VITE_API_PROXY_TARGET || 'http://localhost:5000'
+        '/api': env.VITE_API_PROXY_TARGET || 'http://localhost:5000',
+        '/uploads': env.VITE_API_PROXY_TARGET || 'http://localhost:5000'
       }
     },
     preview: {

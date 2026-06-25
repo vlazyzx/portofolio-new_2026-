@@ -4,7 +4,7 @@ import {
   Modal, ConfirmDialog, EmptyState, LoadingState,
   InputField, TextAreaField, SelectField, TagInput, ImageUploader, Spinner
 } from '../components/ui';
-import { createProject, deleteProject, errorMessage, getProjects, updateProject } from '../services/api';
+import { createProject, deleteProject, errorMessage, getProjects, updateProject, uploadProjectImages } from '../services/api';
 import { useToast } from '../store/toast';
 import type { Project } from '../types';
 
@@ -51,6 +51,8 @@ export function ProjectsPage() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [coverImage, setCoverImage] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
 
   async function loadProjects(showLoader = false) {
@@ -83,6 +85,8 @@ export function ProjectsPage() {
     setFormData(EMPTY_FORM);
     setCoverImage('');
     setGalleryImages([]);
+    setCoverFile(null);
+    setGalleryFiles([]);
     setModalOpen(true);
   }
   function openEdit(p: Project) {
@@ -91,6 +95,8 @@ export function ProjectsPage() {
     setFormData(rest);
     setCoverImage(p.images?.[0] || '');
     setGalleryImages(p.images?.slice(1, 6) || []);
+    setCoverFile(null);
+    setGalleryFiles([]);
     setModalOpen(true);
   }
   function set(key: keyof typeof formData, value: unknown) {
@@ -104,10 +110,19 @@ export function ProjectsPage() {
     setSaving(true);
     try {
       if (editTarget) {
-        await updateProject(editTarget.id, payload);
+        let images = mergedImages;
+        if (coverFile || galleryFiles.length > 0) {
+          images = await uploadProjectImages(editTarget.id, { cover: coverFile, gallery: galleryFiles });
+        }
+        await updateProject(editTarget.id, { ...payload, images });
         toast('Project berhasil diperbarui');
       } else {
-        await createProject(payload);
+        const created = await createProject({ ...payload, images: [] });
+        let images: string[] = [];
+        if (coverFile || galleryFiles.length > 0) {
+          images = await uploadProjectImages(created.id, { cover: coverFile, gallery: galleryFiles });
+          await updateProject(created.id, { images });
+        }
         toast('Project berhasil ditambahkan');
       }
       await loadProjects();
@@ -331,8 +346,10 @@ export function ProjectsPage() {
                 label="Gambar Cover"
                 value={coverImage}
                 onChange={url => setCoverImage(Array.isArray(url) ? url[0] || '' : url)}
+                onFilesChange={files => setCoverFile(files instanceof File ? files : null)}
                 maxWidth={1200}
                 quality={0.78}
+                fileOnly
               />
             </div>
             <div>
@@ -340,10 +357,12 @@ export function ProjectsPage() {
                 label="Galeri Project"
                 value={galleryImages}
                 onChange={urls => setGalleryImages(Array.isArray(urls) ? urls : urls ? [urls] : [])}
+                onFilesChange={files => setGalleryFiles(Array.isArray(files) ? files : files ? [files] : [])}
                 maxWidth={1200}
                 quality={0.78}
                 multiple
                 maxFiles={5}
+                fileOnly
               />
             </div>
           </div>
