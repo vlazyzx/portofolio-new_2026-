@@ -380,6 +380,7 @@ export function TagInput({ label, tags, onChange, placeholder = 'Ketik lalu Ente
 
 interface ImageUploaderProps {
   value: string | string[];
+  filesValue?: File | File[] | null;
   onChange: (url: string | string[]) => void;
   onFilesChange?: (files: File | File[] | null) => void;
   label?: string;
@@ -393,6 +394,7 @@ interface ImageUploaderProps {
 }
 export function ImageUploader({
   value,
+  filesValue,
   onChange,
   onFilesChange,
   label,
@@ -415,6 +417,9 @@ export function ImageUploader({
     : Array.isArray(value) ? value[0] ? [value[0]] : [] : value ? [value] : [];
   const currentValue = images[0] || '';
   const urlsValue = isMultiple ? images.join('\n') : currentValue;
+  const currentFiles = isMultiple
+    ? Array.isArray(filesValue) ? filesValue : filesValue ? [filesValue] : []
+    : Array.isArray(filesValue) ? filesValue[0] ? [filesValue[0]] : [] : filesValue ? [filesValue] : [];
 
   async function compressImage(file: File): Promise<string> {
     const imageUrl = URL.createObjectURL(file);
@@ -486,7 +491,10 @@ export function ImageUploader({
       const remaining = isMultiple ? Math.max(0, maxFiles - images.length) : 1;
       if (remaining === 0) return;
       const selectedFiles = files.slice(0, remaining);
-      onFilesChange?.(isMultiple ? selectedFiles : selectedFiles[0] || null);
+      const mergedFiles = isMultiple
+        ? [...currentFiles, ...selectedFiles].slice(0, maxFiles)
+        : selectedFiles.slice(0, 1);
+      onFilesChange?.(isMultiple ? mergedFiles : mergedFiles[0] || null);
       const nextImages = fileOnly
         ? selectedFiles.map(file => URL.createObjectURL(file))
         : await Promise.all(selectedFiles.map(toDataUrl));

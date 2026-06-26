@@ -248,7 +248,7 @@ function Band({
       curve.points[2].copy(j1.current.lerped);
       curve.points[3].copy(fixedTranslation);
 
-      const curvePoints = curve.getPoints(isMobile ? 16 : 32);
+      const curvePoints = curve.getPoints(isMobile ? 10 : 20);
       const hasInvalidCurvePoint = curvePoints.some(point =>
         !Number.isFinite(point.x) ||
         !Number.isFinite(point.y) ||
@@ -305,6 +305,7 @@ function Band({
               drag(false);
             }}
             onPointerDown={(event: any) => {
+              if (isMobile) return;
               event.target.setPointerCapture(event.pointerId);
               const cardTranslation = toSafeVector3(card.current?.translation?.());
               if (!cardTranslation || !isFiniteVector3Like(event.point)) {

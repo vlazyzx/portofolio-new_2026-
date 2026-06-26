@@ -15,6 +15,7 @@ interface HomeProps {
 export default function Home({ onNavigate, refreshToken = 0 }: HomeProps) {
   const [home, setHome] = useState<HomeContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
     const loadHome = () => {
@@ -163,7 +164,7 @@ export default function Home({ onNavigate, refreshToken = 0 }: HomeProps) {
                   frontImage={lanyardImage}
                   backImage={lanyardImage}
                   imageFit="cover"
-                  lanyardWidth={1.15}
+                  lanyardWidth={isMobile ? 0.95 : 1.15}
                 />
               </Suspense>
             </div>

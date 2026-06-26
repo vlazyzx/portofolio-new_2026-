@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import Ferrofluid from './components/Ferrofluid/Ferrofluid';
 import Navigation from './components/Navigation';
+
 import MotionLayer from './components/MotionLayer';
 import Home from './pages/Home/Home';
 import About from './pages/About/About';
@@ -19,8 +19,8 @@ const pages = {
   admin: Admin
 };
 
-const ferroColors = ['#FF6B2B', '#FFB38A', '#F0F0F0', '#2E3347', '#22C55E'];
 const pageIds = Object.keys(pages) as PageId[];
+
 
 const getPageFromHash = (): PageId => {
   const hashPage = window.location.hash.replace('#', '') as PageId;
@@ -66,31 +66,11 @@ export default function App() {
     <>
       {!isAdminPage && (
         <>
-          <div className="app-background" aria-hidden="true">
-            <Ferrofluid
-              colors={ferroColors}
-              backgroundColor="#09090C"
-              speed={0.28}
-              scale={1.42}
-              turbulence={0.88}
-              fluidity={0.18}
-              rimWidth={0.2}
-              sharpness={2.7}
-              shimmer={0.78}
-              glow={2.35}
-              flowDirection="down"
-              opacity={0.78}
-              mouseInteraction
-              mouseStrength={0.8}
-              mouseRadius={0.32}
-              mouseDampening={0.2}
-              mixBlendMode="screen"
-            />
-          </div>
           <MotionLayer page={activePage} />
           <Navigation activePage={activePage} onNavigate={handleNavigate} />
         </>
       )}
+
       <main className={isAdminPage ? 'admin-main' : 'app-main'}>
         {activePage === 'home'
           ? <Home key={activePage} onNavigate={handleNavigate} refreshToken={homeRefreshToken} />

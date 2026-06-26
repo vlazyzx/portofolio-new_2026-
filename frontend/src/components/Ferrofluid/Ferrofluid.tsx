@@ -238,7 +238,7 @@ export default function Ferrofluid({
     if (!container) return undefined;
 
     const renderer = new Renderer({
-      dpr: dpr ?? Math.min(window.devicePixelRatio || 1, 1.75),
+      dpr: dpr ?? Math.min(window.devicePixelRatio || 1, 1.1),
       alpha: true,
       antialias: true
     });
@@ -302,6 +302,8 @@ export default function Ferrofluid({
       const scaleFactor = renderer.dpr || 1;
       const x = (event.clientX - rect.left) * scaleFactor;
       const y = (rect.height - (event.clientY - rect.top)) * scaleFactor;
+      const [prevX, prevY] = mouseTargetRef.current;
+      if (Math.abs(prevX - x) < 2 && Math.abs(prevY - y) < 2) return;
       mouseTargetRef.current = [x, y];
       if (mouseDampening <= 0) uniforms.iMouse.value = [x, y];
     };
@@ -310,6 +312,7 @@ export default function Ferrofluid({
 
     const loop = (time: number) => {
       rafRef.current = requestAnimationFrame(loop);
+      if (document.visibilityState !== 'visible') return;
       uniforms.iTime.value = time * 0.001;
       if (mouseDampening > 0) {
         if (!lastTimeRef.current) lastTimeRef.current = time;

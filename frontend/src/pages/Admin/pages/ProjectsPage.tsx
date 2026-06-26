@@ -345,6 +345,7 @@ export function ProjectsPage() {
               <ImageUploader
                 label="Gambar Cover"
                 value={coverImage}
+                filesValue={coverFile}
                 onChange={url => setCoverImage(Array.isArray(url) ? url[0] || '' : url)}
                 onFilesChange={files => setCoverFile(files instanceof File ? files : null)}
                 maxWidth={1200}
@@ -356,6 +357,7 @@ export function ProjectsPage() {
               <ImageUploader
                 label="Galeri Project"
                 value={galleryImages}
+                filesValue={galleryFiles}
                 onChange={urls => setGalleryImages(Array.isArray(urls) ? urls : urls ? [urls] : [])}
                 onFilesChange={files => setGalleryFiles(Array.isArray(files) ? files : files ? [files] : [])}
                 maxWidth={1200}
